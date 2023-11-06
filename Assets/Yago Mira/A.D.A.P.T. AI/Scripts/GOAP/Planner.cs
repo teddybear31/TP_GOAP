@@ -142,6 +142,14 @@ namespace ADAPT
                     {
                         currentState.Add(effect.Key, effect.Value.value);
                     }
+                    // Added by Teddy B.
+                    foreach (KeyValuePair<string, object> effect in parent.state)
+                    {
+                        if (!currentState.ContainsKey(effect.Key))
+                        {
+                            currentState.Add(effect.Key, effect.Value);
+                        }
+                    }
 
                     Node node = new Node(parent, ((a.totalPriority - a.totalCost) <= 0) ? 1 : a.totalPriority - a.totalCost, currentState, a); //Total Priority less TotalCost of Actions (get individual ones of preconditions and effects)
 
@@ -177,27 +185,19 @@ namespace ADAPT
         //Compare if items are in the 'state' dictionary.
         private bool InState(Dictionary<string, Resource> resources, Dictionary<string, object> states, bool receiveGoal) //ReceiveGoal: in case of receive goals as parameter.
         {
+  
             bool match = false, allMatch = true;
-
+            bool saveMatch = true;
             foreach (KeyValuePair<string, Resource> resource in resources)
             {
-                foreach (KeyValuePair<string, object> state in states)
+                if (saveMatch)
                 {
-                    if ((state.Key).Equals(resource.Key))
+                    foreach (KeyValuePair<string, object> state in states)
                     {
-
-                        if ((resource.Value.resourceEnumType == ResourceType.WorldElement.ToString()) || (resource.Value.resourceEnumType == ResourceType.Position.ToString()))
+                        if ((state.Key).Equals(resource.Key))
                         {
-                            match = true;
 
-                            if (receiveGoal == true)
-                                goal_to_achieve = resource.Key;
-
-                            break;
-                        }
-                        else
-                        {
-                            if (state.Value.Equals(resource.Value.value) || ((resource.Value.resourceEnumType == ResourceType.InventoryObject.ToString()) && ((float)state.Value >= (float)resource.Value.value)))
+                            if ((resource.Value.resourceEnumType == ResourceType.WorldElement.ToString()) || (resource.Value.resourceEnumType == ResourceType.Position.ToString()))
                             {
                                 match = true;
 
@@ -208,16 +208,30 @@ namespace ADAPT
                             }
                             else
                             {
-                                match = false;
-                                break;
+                                if (state.Value.Equals(resource.Value.value) || ((resource.Value.resourceEnumType == ResourceType.InventoryObject.ToString()) && ((float)state.Value >= (float)resource.Value.value)))
+                                {
+                                    match = true;
+
+                                    if (receiveGoal == true)
+                                        goal_to_achieve = resource.Key;
+
+                                    break;
+                                }
+                                else
+                                {
+                                    match = false;
+                                    saveMatch = false;
+                                    break;
+                                }
                             }
                         }
                     }
+                
 
                 }
             }
 
-            if (!match)
+            if (!saveMatch || !match)
                 allMatch = false;
 
             return allMatch;
